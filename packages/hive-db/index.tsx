@@ -8,3 +8,4 @@ export * from './src/db/createGameInvitation';
 export * from './src/db/getUser';
 export * from './src/db/playGameMoves';
 export * from './src/db/rejectGameInvitation';
+export * from './src/db/updateUsername';

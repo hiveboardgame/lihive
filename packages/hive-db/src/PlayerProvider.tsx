@@ -11,13 +11,13 @@ import {
 import { useRouter } from 'next/router';
 import { UserData } from './user/user';
 import {
-  createUserWithEmailAndPassword,
   GoogleAuthProvider,
-  signInWithEmailAndPassword,
   signInWithPopup,
+  signInAnonymously,
   signOut
 } from 'firebase/auth';
-import { Game, getGameIsEnded, getGameIsStarted } from './game/game';
+import { Game, getGameIsEnded, getGameIsStarted, getUserGames } from './game/game';
+import { ensureGuest, ensureUser, getUser, updateUsername } from '..';
 
 export interface PlayerContextProps {
   uid: string | null;
@@ -26,9 +26,8 @@ export interface PlayerContextProps {
   invitations: Game[];
   activeGames: Game[];
   completedGames: Game[];
-  signInWithEmail: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
-  signUpWithEmail: (email: string, password: string) => Promise<void>;
+  signInAsGuest: () => Promise<void>;
   signout: (redirect: string) => Promise<void>;
 }
 
@@ -58,13 +57,6 @@ function usePlayerState(): PlayerContextProps {
   const router = useRouter();
 
   /**
-   * Handle an error from Firebase.
-   */
-  const handleError = useCallback((error: Error) => {
-    console.error(error.message);
-  }, []);
-
-  /**
    * Handle a change in the user's data.
    */
   const handleFirebaseUser = useCallback(
@@ -77,27 +69,27 @@ function usePlayerState(): PlayerContextProps {
   /**
    * Handle a change to the player's games
    */
-  const handleGamesChanged = useCallback((games: Game[]) => {
-    const activeGames = games.filter(
-      (game) => getGameIsStarted(game) && !getGameIsEnded(game)
-    );
-    const completedGames = games.filter((game) => getGameIsEnded(game));
-    const invitations = games.filter((game) => !getGameIsStarted(game));
-    setActiveGames(activeGames);
-    setCompletedGames(completedGames);
-    setInvitations(invitations);
-  }, []);
+  useEffect(() => {
+    if (user === null) return;
+    if (user.username === '') {
+      setIncompleteProfile(true);
+    }
+    getUserGames(user)
+      .then((games: Game[]) => {
+        const activeGames = games.filter(
+          (game) => getGameIsStarted(game) && !getGameIsEnded(game)
+        );
+        const completedGames = games.filter((game) => getGameIsEnded(game));
+        const invitations = games.filter((game) => !getGameIsStarted(game));
+        setActiveGames(activeGames);
+        setCompletedGames(completedGames);
+        setInvitations(invitations);
+      });
+  }, [user]);
 
-  /**
-   * Handle a change to the user's data.
-   */
-  const handleUserDataChanged = useCallback(
-    (user: UserData | null) => {
-      setIncompleteProfile(user === null && uid !== null);
-      setUser(user);
-    },
-    [uid]
-  );
+  useEffect(() => {
+    getUser(uid).then(user => setUser(user));
+  }, [uid])
 
   /**
    * Sign in using Google.
@@ -109,32 +101,22 @@ function usePlayerState(): PlayerContextProps {
     });
     return signInWithPopup(auth, provider)
       .then((creds) => creds.user)
-      .then(handleFirebaseUser);
+      .then(ensureUser)
+      .then(user => {
+        setUid(user.uid);
+        setUser(user);
+      });
   };
 
-  /**
-   * Sign in using an email and password.
-   *
-   * @param email
-   * @param password
-   */
-  const signInWithEmail = (email: string, password: string) => {
-    return signInWithEmailAndPassword(auth, email, password)
+  const signInAsGuest = () => {
+    return signInAnonymously(auth)
       .then((creds) => creds.user)
-      .then(handleFirebaseUser);
-  };
-
-  /**
-   * Sign up using an email address.
-   *
-   * @param email
-   * @param password
-   */
-  const signUpWithEmail = (email: string, password: string) => {
-    return createUserWithEmailAndPassword(auth, email, password)
-      .then((creds) => creds.user)
-      .then(handleFirebaseUser);
-  };
+      .then(ensureGuest)
+      .then(user => {
+        setUid(user.uid);
+        setUser(user);
+      });
+  }
 
   /**
    * Sign out the current user and optionally redirect to a page.
@@ -171,9 +153,8 @@ function usePlayerState(): PlayerContextProps {
     activeGames,
     completedGames,
     invitations,
-    signInWithEmail,
     signInWithGoogle,
-    signUpWithEmail,
+    signInAsGuest,
     signout
   };
 }
@@ -187,9 +168,8 @@ function defaultPlayerContext(): PlayerContextProps {
     activeGames: [],
     completedGames: [],
     invitations: [],
-    signInWithEmail: () => Promise.reject(message),
     signInWithGoogle: () => Promise.reject(message),
-    signUpWithEmail: () => Promise.reject(message),
+    signInAsGuest: () => Promise.reject(message),
     signout: () => Promise.reject(message)
   };
 }

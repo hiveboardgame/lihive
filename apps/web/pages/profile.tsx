@@ -1,29 +1,32 @@
 import { usePlayer } from 'hive-db';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { SignUpForm } from '../components/forms/SignUpForm';
+import { useEffect } from 'react';
+import { FinishProfileForm } from '../components/forms/FinishProfileForm';
 import { NavBar } from '../components/nav/NavBar';
 import { useTitle } from '../hooks/useTitle';
 
-const Register = () => {
+const Profile = () => {
   const { uid, incompleteProfile } = usePlayer();
-  const router = useRouter();
   const title = useTitle();
+  const router = useRouter();
 
-  if (uid !== null && incompleteProfile) router.push('/profile');
-  if (uid !== null && !incompleteProfile) router.push('/');
+  useEffect(() => {
+    if (!incompleteProfile) router.push('/');
+  }, [incompleteProfile, router]);
+  console.log(uid, incompleteProfile);
 
   return (
     <>
       <Head>
         <title>{title}</title>
       </Head>
-      <NavBar />
+      <NavBar hideFinishProfile />
       <div className='prose mx-auto my-16'>
-        <SignUpForm />
+        {uid && incompleteProfile && <FinishProfileForm uid={uid} />}
       </div>
     </>
   );
 };
 
-export default Register;
+export default Profile;

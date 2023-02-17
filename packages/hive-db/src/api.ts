@@ -1,29 +1,30 @@
-import { Game } from './game/game';
-import { Move } from 'hive-lib';
+import app from './db/app';
+import { getAuth } from '@firebase/auth';
 
-// WIP API access functions to replace firebase
+const auth = getAuth(app);
 
-export async function postJSON(uri: string, body: string): Promise<any> {
-  const res = await fetch(uri, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: body,
-  });
-  return res.json();
+export async function postJSON(uri: string, body: any, authenticated = false): Promise<any> {
+  return jsonReq(uri, { method: 'POST', body: JSON.stringify(body) }, authenticated);
 }
 
-export async function getJSON(uri: string): Promise<any> {
-  const res = await fetch(uri, {
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  })
-  return res.json();
+export async function getJSON(uri: string, authenticated = false): Promise<any> {
+  return jsonReq(uri, { method: 'GET' }, authenticated);
 }
 
-export async function postGame(game: Game): Promise<Game> {
-  return postJSON('/api/game', JSON.stringify(game))
-    .then(() => game);
+async function jsonReq(uri: string, options: any, authenticated: boolean): Promise<any> {
+  options.headers = {
+    'Content-Type': 'application/json',
+  };
+  if (authenticated) {
+    if (!auth.currentUser) {
+      throw new Error('user not logged in');
+    }
+    options.headers['X-Firebase-Token'] = await auth.currentUser.getIdToken();
+  }
+  const res = await fetch(uri, options)
+  if (res.ok) {
+    return res.json();
+  } else {
+    throw new Error(`unsuccessful response code ${res.status}`)
+  }
 }

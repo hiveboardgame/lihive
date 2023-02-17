@@ -113,7 +113,7 @@ const slice = createSlice({
         // The user has clicked their proposed move, so send it to the server
         state.selectedTileId = null;
         playGameMove(game, proposedMove)
-          .then(([game, validNextMoves]) => {
+          .then(({ game, validNextMoves }) => {
             state.game = game;
             state.validNextMoves = validNextMoves;
           })

@@ -18,6 +18,7 @@ import {
 } from 'hive-lib';
 import { getColorTurn, newGameState } from '../game/state';
 import { newPartialGameMetaWithFieldValues } from '../game/meta';
+import { postJSON } from '../api';
 
 /**
  * Play some number of moves by updating a game document in the Firestore
@@ -31,16 +32,9 @@ import { newPartialGameMetaWithFieldValues } from '../game/meta';
  * @param game The game to update.
  * @param moves An ordered list of moves to play.
  */
-export function playGameMove(game: Game, move: Move): Promise<[Game, Move[]]> {
-    const uri = `/api/board/${game.gid}/move/${move.notation}`;
-    const options = {
-      method: 'POST',
-    };
-    return fetch(uri, options)
-      .then(res => res.json())
-      .then((data: GameMoveResponse) => {
-        return [data.game, data.validNextMoves];
-      });
+export function playGameMove(game: Game, move: Move): Promise<GameMoveResponse> {
+  const uri = `/api/board/${game.gid}/move/${move.notation}`;
+  return postJSON(uri, {}, true);
 }
 
 interface GameMoveResponse {

@@ -1,3 +1,5 @@
+import { postJSON, getJSON } from '../api';
+import { User as FirebaseUser } from '@firebase/auth';
 import { UserData } from '../user/user';
 
 /**
@@ -7,6 +9,13 @@ import { UserData } from '../user/user';
  * @return A promise that resolves to the user's data.
  */
 export function getUser(uid: string): Promise<UserData> {
-  // TODO(wgreenberg): implement users
-  return Promise.reject("unimplemented");
+  return getJSON(`/api/user/${uid}`)
+}
+
+export function ensureUser(user: FirebaseUser): Promise<UserData> {
+  return postJSON(`/api/user`, { uid: user.uid }, true);
+}
+
+export function ensureGuest(user: FirebaseUser): Promise<UserData> {
+  return postJSON(`/api/user/guest`, { uid: user.uid }, true);
 }

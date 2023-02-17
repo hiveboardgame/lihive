@@ -9,6 +9,7 @@ import * as state from './state';
 import { UserData } from '../user/user';
 import { newGameMeta, newGameMetaWithFieldValues } from './meta';
 import { newGameState } from './state';
+import { getJSON } from '../api';
 
 export interface Game {
   gid: string;
@@ -64,6 +65,11 @@ export function newGameWithFieldValues(
     meta: newGameMetaWithFieldValues(creatorUid, isPublic),
     state: newGameState()
   };
+}
+
+export function getUserGames(user: UserData): Promise<Game[]> {
+  return getJSON(`/api/user/${user.username}/games`)
+    .then((games: Game[]) => games);
 }
 
 /**
