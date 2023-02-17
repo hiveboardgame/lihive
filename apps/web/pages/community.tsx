@@ -1,4 +1,4 @@
-import { getUsersExcept, usePlayer, UserData } from 'hive-db';
+import { usePlayer, UserData } from 'hive-db';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
@@ -16,7 +16,8 @@ const Community = () => {
   const router = useRouter();
 
   useEffect(() => {
-    if (uid) getUsersExcept(uid).then(setUsers);
+    // TODO(wgreenberg): actually retrieve users
+    setUsers([]);
     if (incompleteProfile) router.push('/profile');
   }, [uid, incompleteProfile, router]);
 

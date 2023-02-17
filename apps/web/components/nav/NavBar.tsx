@@ -2,7 +2,6 @@ import { usePlayer } from 'hive-db';
 import { Nav, NavProps } from '../common/Nav';
 import Link from 'next/link';
 import { NavLink } from '../common/NavLink';
-import { FinishProfileLinks } from './FinishProfileLinks';
 import { HiveLogoLink } from './HiveLogoLink';
 import { NotificationsBell } from './NotificationsBell';
 import { SignInLink } from './SignInLink';
@@ -10,7 +9,6 @@ import { Spinner } from './Spinner';
 import { Username } from './Username';
 
 const NavBarUsername = (props: NavBarProps) => {
-  const { hideFinishProfile } = props;
   const { uid, user, incompleteProfile, signout } = usePlayer();
   if (!uid) {
     return <SignInLink />;
@@ -22,21 +20,16 @@ const NavBarUsername = (props: NavBarProps) => {
       return <Username user={user} signout={signout} />;
     }
   }
-  if (!hideFinishProfile) {
-    return <FinishProfileLinks />;
-  }
   return null;
 };
 
 interface NavBarProps extends NavProps {
-  hideFinishProfile?: boolean;
 }
 
 const NavBar = (props: NavBarProps) => {
-  const { hideFinishProfile, ...rest } = props;
   const { user } = usePlayer();
   return (
-    <Nav {...rest}>
+    <Nav {...props}>
       <div className='flex items-center flex-grow'>
         <Link href='/' passHref>
           <HiveLogoLink />

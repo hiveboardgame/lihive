@@ -18,8 +18,6 @@ import {
 } from 'hive-lib';
 import { getColorTurn, newGameState } from '../game/state';
 import { newPartialGameMetaWithFieldValues } from '../game/meta';
-import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { gamesCollection } from './collections';
 
 /**
  * Play some number of moves by updating a game document in the Firestore
@@ -33,46 +31,21 @@ import { gamesCollection } from './collections';
  * @param game The game to update.
  * @param moves An ordered list of moves to play.
  */
-export function playGameMoves(game: Game, moves: Move[]): Promise<void> {
-  const gid = game.gid;
-  if (!gid.length) {
-    throw new Error('Cannot play move, no game id provided.');
-  }
-  if (!moves.length) {
-    return Promise.resolve();
-  }
+export function playGameMove(game: Game, move: Move): Promise<[Game, Move[]]> {
+    const uri = `/api/board/${game.gid}/move/${move.notation}`;
+    const options = {
+      method: 'POST',
+    };
+    return fetch(uri, options)
+      .then(res => res.json())
+      .then((data: GameMoveResponse) => {
+        return [data.game, data.validNextMoves];
+      });
+}
 
-  const currentNotation = getGameNotation(game);
-  const currentMoves = getGameMoves(currentNotation);
-  const nextMoves = [...currentMoves, ...moves];
-  const nextNotation = buildGameNotation(nextMoves);
-  const nextBoard = buildBoard(nextMoves);
-
-  const nextGameState = newGameState(nextNotation);
-  const nextGameMeta = newPartialGameMetaWithFieldValues();
-
-  const lastNewMove = moves[moves.length - 1];
-  if (lastNewMove.end === true) {
-    nextGameMeta.isEnded = true;
-    nextGameMeta.endedDate = serverTimestamp();
-    nextGameMeta.result = determineGameResult(game, nextBoard);
-  } else {
-    const nextColorTurn = getColorTurn(nextGameState);
-    const gameOptions = getGameOptions(game);
-    const mustPass = !canMove(nextBoard, nextColorTurn, gameOptions);
-    if (mustPass) {
-      if (lastNewMove.notation === 'x') throwStalemateError();
-      const passMove = buildPassMove();
-      return playGameMoves(game, [...moves, passMove]);
-    }
-  }
-
-  nextGameMeta.playedDate = serverTimestamp();
-
-  const gameUpdate = newPartialGameWithFieldValues();
-  gameUpdate.state = nextGameState;
-  gameUpdate.meta = nextGameMeta;
-  return setDoc(doc(gamesCollection, gid), gameUpdate, { merge: true });
+interface GameMoveResponse {
+  game: Game,
+  validNextMoves: Move[],
 }
 
 function determineGameResult(game: Game, board: GameBoard): string {

@@ -17,10 +17,7 @@ import {
   signInWithPopup,
   signOut
 } from 'firebase/auth';
-import { FirestoreError } from '@firebase/firestore-types';
-import { watchUser } from './db/watchUser';
 import { Game, getGameIsEnded, getGameIsStarted } from './game/game';
-import { watchUserGames } from './db/watchUserGames';
 
 export interface PlayerContextProps {
   uid: string | null;
@@ -63,7 +60,7 @@ function usePlayerState(): PlayerContextProps {
   /**
    * Handle an error from Firebase.
    */
-  const handleFirebaseError = useCallback((error: FirestoreError) => {
+  const handleError = useCallback((error: Error) => {
     console.error(error.message);
   }, []);
 
@@ -166,22 +163,6 @@ function usePlayerState(): PlayerContextProps {
       unsubscribe();
     };
   }, [handleFirebaseUser]);
-
-  /**
-   * Listen for changes to the user's data
-   */
-  useEffect(() => {
-    const unsubCallbacks: (() => void)[] = [];
-    if (uid) {
-      unsubCallbacks.push(
-        watchUser(uid, handleUserDataChanged, handleFirebaseError)
-      );
-      unsubCallbacks.push(
-        watchUserGames(uid, handleGamesChanged, handleFirebaseError)
-      );
-    }
-    return () => unsubCallbacks.forEach((unsub) => unsub());
-  }, [handleUserDataChanged, handleFirebaseError, handleGamesChanged, uid]);
 
   return {
     uid,

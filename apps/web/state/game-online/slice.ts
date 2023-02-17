@@ -1,9 +1,8 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Game, getGameNotation, getMoveCount, playGameMoves } from 'hive-db';
+import { Game, getGameNotation, getMoveCount, playGameMove } from 'hive-db';
 import {
   buildBoard,
   buildMove,
-  getGameMoves,
   getTopTile,
   HexCoordinate,
   hexesEqual,
@@ -43,11 +42,10 @@ const slice = createSlice({
     },
     ghostClicked(state, action: PayloadAction<HexCoordinate>) {
       const coordinate = action.payload;
-      const { game, selectedTileId } = state;
+      const { game, selectedTileId, validNextMoves } = state;
 
       if (canProposeMove(state) && notNull(game) && notNull(selectedTileId)) {
-        const moves = getGameMoves(getGameNotation(game));
-        const board = buildBoard(moves);
+        const board = buildBoard(validNextMoves);
         state.proposedMove = buildMove(board, selectedTileId, coordinate);
         state.proposedMoveCoordinate = coordinate;
         state.upTo = -1;
@@ -114,9 +112,14 @@ const slice = createSlice({
       ) {
         // The user has clicked their proposed move, so send it to the server
         state.selectedTileId = null;
-        playGameMoves(game, [proposedMove]).catch((error) => {
-          console.error(error);
-        });
+        playGameMove(game, proposedMove)
+          .then(([game, validNextMoves]) => {
+            state.game = game;
+            state.validNextMoves = validNextMoves;
+          })
+          .catch((error) => {
+            console.error(error);
+          });
       } else {
         // The user has selected a new tile
         state.selectedTileId = getTopTile(stack);

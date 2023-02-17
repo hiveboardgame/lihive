@@ -1,7 +1,7 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { Provider } from 'react-redux';
-import { Game, usePlayer, watchGame } from 'hive-db';
+import { Game, usePlayer } from 'hive-db';
 import { GameOnline } from '../../components/game-online/GameOnline';
 import { GameOnlineSidebar } from '../../components/game-online/GameOnlineSidebar';
 import { NavBar } from '../../components/nav/NavBar';
@@ -59,12 +59,6 @@ const Game = () => {
   const { gameid } = router.query;
   const [game, setGame] = useState<Game | undefined>();
   const title = useTitle();
-
-  useEffect(() => {
-    if (typeof gameid === 'string') {
-      return watchGame(gameid, setGame, () => setGame(undefined));
-    }
-  }, [gameid]);
 
   return (
     <>
