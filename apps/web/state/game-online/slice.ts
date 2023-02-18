@@ -3,6 +3,7 @@ import { Game, getGameNotation, getMoveCount, playGameMove } from 'hive-db';
 import {
   buildBoard,
   buildMove,
+  getGameMoves,
   getTopTile,
   HexCoordinate,
   hexesEqual,
@@ -45,7 +46,8 @@ const slice = createSlice({
       const { game, selectedTileId, validNextMoves } = state;
 
       if (canProposeMove(state) && notNull(game) && notNull(selectedTileId)) {
-        const board = buildBoard(validNextMoves);
+        const moves = getGameMoves(getGameNotation(game));
+        const board = buildBoard(moves);
         state.proposedMove = buildMove(board, selectedTileId, coordinate);
         state.proposedMoveCoordinate = coordinate;
         state.upTo = -1;
